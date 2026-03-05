@@ -100,5 +100,5 @@ plt.tight_layout()
 
 plot_path = os.path.join(root, 'ReAct', strategy.value, f'{len(agents)}_questions_success_rate.png')
 plt.savefig(plot_path, dpi=150)
-plt.show()
+#plt.show()
 print(f'Plot saved to {plot_path}')
