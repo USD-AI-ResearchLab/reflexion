@@ -247,7 +247,7 @@ class ReactAgent:
     def prompt_agent(self) -> str:
         return format_step(self.llm(self._build_agent_prompt()))
     
-    def z_build_agent_prompt(self) -> str:
+    def _build_agent_prompt(self) -> str:
         return self.agent_prompt.format(
                             examples = self.react_examples,
                             question = self.question,
