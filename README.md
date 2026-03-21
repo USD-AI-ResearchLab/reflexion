@@ -84,7 +84,7 @@ Specify the run parameters in `./run_reflexion.sh`.
 `resume_dir`: the logging directory from which to resume the previous run
 `start_trial_num`: if resume run, then the trial number of which to start
 
-Run the trial
+Run the trial (Example for retrieval reflexion trial)
 
 ```bash
 ./prog_retrieval_reflexion.sh
