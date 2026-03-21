@@ -135,3 +135,8 @@ scratch/
 .vscode/
 
 .DS_Store/
+
+webshop_runs/.DS_Store
+alfworld_runs/alf-env/
+alfworld_runs/.DS_Store
+.DS_Store

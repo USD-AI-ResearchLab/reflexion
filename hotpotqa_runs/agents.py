@@ -443,4 +443,3 @@ def EM(answer, key) -> bool:
     return normalize_answer(answer) == normalize_answer(key)
 
 
-

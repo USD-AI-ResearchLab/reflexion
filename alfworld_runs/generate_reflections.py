@@ -1,4 +1,4 @@
-from utils import get_completion
+from utils import get_chat
 
 from typing import List, Dict, Any
 
@@ -7,7 +7,7 @@ with open("./reflexion_few_shot_examples.txt", 'r') as f:
 
 def _get_scenario(s: str) -> str:
     """Parses the relevant scenario from the experience log."""
-    return s.split("Here is the task:")[-1].strip()
+    return (s.split("Here is the task:")[-1] or '').strip()
 
 def _generate_reflection_query(log_str: str, memory: List[str]) -> str:
     """Allows the Agent to reflect upon a past experience."""
@@ -41,7 +41,7 @@ def update_memory(trial_log_path: str, env_configs: List[Dict[str, Any]]) -> Lis
             else:
                 memory: List[str] = env['memory']
             reflection_query: str = _generate_reflection_query(env_logs[i], memory)
-            reflection: str = get_completion(reflection_query) # type: ignore
+            reflection: str = get_chat(reflection_query) # type: ignore
             env_configs[i]['memory'] += [reflection]
                 
     return env_configs

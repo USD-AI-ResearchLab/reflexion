@@ -121,7 +121,7 @@ Here are some examples:
 Previous trial:
 Question: {question}{scratchpad}
 
-Reflection:"""
+Reflection:""" 
 
 react_agent_prompt = PromptTemplate(
                         input_variables=["examples", "question", "scratchpad"],
@@ -156,3 +156,7 @@ REFLECTION_SYSTEM_PROMPT = "You are a self-reflection agent. You will be given a
 
 COT_SYSTEM_PROMPT = "You are a chain-of-thought reasoning agent. Think step by step to reason through the question, then provide your final answer in the format Finish[answer]. Do not search for information, reason only from what you know."
 COT_REFLECTION_SYSTEM_PROMPT = "You are a self-reflection agent. You will be given a failed chain-of-thought reasoning attempt. Analyze where the reasoning went wrong and provide a concise, actionable plan to reason correctly in the next attempt. Respond in plain text only."
+COT_REFLECTION_SYSTEM_PROMPT = "You are a self-reflection agent. You will be given a failed chain-of-thought reasoning attempt. Analyze where the reasoning went wrong and provide a concise, actionable plan to reason correctly in the next attempt. Respond in plain text only."
+COT_REFLECTION_SYSTEM_PROMPT = "You are a self-reflection agent. You will be given a failed chain-of-thought reasoning attempt. Analyze where the reasoning went wrong and provide a concise, actionable plan to reason correctly in the next attempt. Respond in plain text only."
+
+CLASSIFY_ERROR_SYSTEM_PROMPT = "You are an error classification agent. You will be given a failed question-answering trajectory. Classify the failure into exactly ONE error type from the provided list. Respond with only the error type label, nothing else. No explanation, no punctuation, just the label."
