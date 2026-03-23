@@ -3,10 +3,11 @@
 python main.py \
   --run_name "reflexion" \
   --root_dir "root" \
-  --dataset_path ./benchmarks/humaneval-py_hardest50.jsonl \
+  --dataset_path ./benchmarks/leetcode-hard-py.jsonl \
   --strategy "reflexion" \
   --language "py" \
   --model "gpt-oss" \
   --pass_at_k 1 \
   --max_iters 10 \
+  --is_leetcode \
   --verbose
