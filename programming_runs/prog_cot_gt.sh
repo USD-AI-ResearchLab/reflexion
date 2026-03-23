@@ -3,7 +3,7 @@
 python main.py \
   --run_name "cot_gt" \
   --root_dir "root" \
-  --dataset_path ./benchmarks/humaneval-py.jsonl \
+  --dataset_path ./benchmarks/humaneval-py_hardest50.jsonl \
   --strategy "cot_gt" \
   --language "py" \
   --model "gpt-oss" \

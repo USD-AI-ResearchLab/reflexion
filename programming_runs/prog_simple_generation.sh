@@ -14,7 +14,7 @@
 python main.py \
   --run_name "simple" \
   --root_dir "root" \
-  --dataset_path ./benchmarks/humaneval-py.jsonl \
+  --dataset_path ./benchmarks/humaneval-py_hardest50.jsonl \
   --strategy "simple" \
   --language "py" \
   --model "gpt-oss" \

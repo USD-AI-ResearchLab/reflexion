@@ -3,7 +3,7 @@
 python main.py \
   --run_name "reflexion" \
   --root_dir "root" \
-  --dataset_path ./benchmarks/humaneval-py.jsonl \
+  --dataset_path ./benchmarks/humaneval-py_hardest50.jsonl \
   --strategy "reflexion" \
   --language "py" \
   --model "gpt-oss" \

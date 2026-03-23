@@ -3,7 +3,7 @@
 python main.py \
   --run_name "retrieval" \
   --root_dir "root" \
-  --dataset_path ./benchmarks/humaneval-py.jsonl \
+  --dataset_path ./benchmarks/humaneval-py_hardest50.jsonl \
   --strategy "retrieval" \
   --language "py" \
   --model "gpt-oss" \
