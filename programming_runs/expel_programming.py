@@ -132,12 +132,17 @@ def run_expel_gather(
           f"{len([r for r in expel.pool if not r.success])} failures")
 
 
+# def run_expel_extract_insights(expel: ExpeL, model_name: str) -> None:
+#     """Extract insights from gathered experience. Call after run_expel_gather."""
+#     model   = model_factory(model_name)
+#     llm_fn  = lambda p: model.generate_chat([{"role": "user", "content": p}])
+#     expel.extract_insights(llm_fn)
+#     print("Extracted insights:")
 def run_expel_extract_insights(expel: ExpeL, model_name: str) -> None:
-    """Extract insights from gathered experience. Call after run_expel_gather."""
-    model   = model_factory(model_name)
-    llm_fn  = lambda p: model.generate_chat([{"role": "user", "content": p}])
+    from generators.model import Message
+    model  = model_factory(model_name)
+    llm_fn = lambda p: model.generate_chat([Message(role="user", content=p)])
     expel.extract_insights(llm_fn)
-    print("Extracted insights:")
     for i, ins in enumerate(expel.insights, 1):
         print(f"  {i}. {ins}")
 
