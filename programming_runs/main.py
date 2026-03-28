@@ -879,7 +879,7 @@ Starting run:
             expel      = ExpeL(max_insights=10, retrieval_k=3)
             gather_log = log_path.replace('.jsonl', '_gather.jsonl')
 
-            # Phase 1 — gather (run Reflexion, store trajectories)
+            # Phase 1 — gather
             print("\n=== ExpeL Phase 1: Gathering ===")
             run_expel_gather(
                 dataset=dataset,
@@ -895,11 +895,12 @@ Starting run:
 
             # Phase 2 — extract insights
             print("\n=== ExpeL Phase 2: Extracting Insights ===")
-            run_expel_extract_insights(expel, args.model_name
-                                       if hasattr(args, 'model_name') else args.model)
+            run_expel_extract_insights(expel, args.model)  # ← fixed
 
-            # Phase 3 — eval (single attempt with context)
+            # Phase 3 — eval (clear log first so gather results don't pollute)
             print("\n=== ExpeL Phase 3: Evaluation ===")
+            if os.path.exists(log_path):
+                os.remove(log_path)
             run_expel_eval(
                 dataset=dataset,
                 model_name=args.model,
@@ -932,7 +933,10 @@ Starting run:
         import traceback; traceback.print_exc()
 
     finally:
-        metrics = compute_per_iter_metrics(log_path, args.max_iters)
+        if os.path.exists(log_path) and os.path.getsize(log_path) > 0:
+            metrics = compute_per_iter_metrics(log_path, args.max_iters)
+        else:
+            metrics = {}
         if metrics:
             num_problems = metrics["total"]
             print(f"\n--- Results for {args.strategy} ---")
