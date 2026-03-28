@@ -901,8 +901,12 @@ Starting run:
             print("\n=== ExpeL Phase 3: Evaluation ===")
             if os.path.exists(log_path):
                 os.remove(log_path)
+            import copy
+            eval_dataset = copy.deepcopy(dataset)
+            for item in eval_dataset:
+                item['is_solved'] = False  # reset so eval attempts all problems
             run_expel_eval(
-                dataset=dataset,
+                dataset=eval_dataset,
                 model_name=args.model,
                 language=args.language,
                 pass_at_k=args.pass_at_k,
