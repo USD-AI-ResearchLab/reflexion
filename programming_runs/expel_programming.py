@@ -177,7 +177,8 @@ def run_expel_eval(
     num_items   = len(dataset)
     num_success = 0
 
-    for i, item in enumerate_resume(dataset, log_path, resume=False):
+    # for i, item in enumerate_resume(dataset, log_path, resume=False):
+    for i, item in enumerate(dataset):
         is_solved = False
         skipped   = False
 
