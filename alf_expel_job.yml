@@ -41,11 +41,11 @@ spec:
               # Run ExpeL — 3 gathering trials + 1 eval trial
               # Total trials = n_gather(3) + eval(1) = 4
               python main.py \
-                --num_trials 4 \
+                --num_trials 11 \
                 --num_envs 134 \
                 --run_name expel_run \
                 --strategy expel \
-                --expel_n_gather 3 \
+                --expel_n_gather 10 \
                 --model gpt-oss
 
               mkdir -p ${RESULTS_PATH}
@@ -57,24 +57,19 @@ spec:
             - name: git-repo
               mountPath: /app
             - name: results-volume
-              mountPath: /results
-            - name: alfworld-data
-              mountPath: /data/alfworld
+              mountPath: /results # ← PVC mounted here
           resources:
             limits:
-              memory: 4Gi
-              cpu: "2"
+              memory: 2Gi
+              cpu: "1"
             requests:
-              memory: 4Gi
-              cpu: "2"
+              memory: 2Gi
+              cpu: "1"
       volumes:
         - name: git-repo
           emptyDir: {}
         - name: results-volume
           persistentVolumeClaim:
-            claimName: reflexion-data-pvc
-        - name: alfworld-data
-          persistentVolumeClaim:
-            claimName: alfworld-pvc
+            claimName: reflexion-data-pvc # ← Your PVC name
       restartPolicy: Never
   backoffLimit: 1

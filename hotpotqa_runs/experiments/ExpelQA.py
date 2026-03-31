@@ -41,7 +41,7 @@ hotpot = joblib.load('../data/hotpot-qa-distractor-sample.joblib').reset_index(d
 llm    = AnyOpenAILLM()
 llm_fn = lambda p: llm(p, REFLECTION_SYSTEM_PROMPT)
 
-N_GATHER = 3   # gathering trials (Reflexion)
+N_GATHER = 5   # gathering trials (Reflexion)
 N_TOTAL  = len(hotpot)
 
 # ---------------------------------------------------------------------------

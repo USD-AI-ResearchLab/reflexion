@@ -47,11 +47,11 @@ spec:
               mountPath: /results
           resources:
             limits:
-              memory: 4Gi
-              cpu: "2"
+              memory: 2Gi
+              cpu: "1"
             requests:
-              memory: 4Gi
-              cpu: "2"
+              memory: 2Gi
+              cpu: "1"
       volumes:
         - name: git-repo
           emptyDir: {}
