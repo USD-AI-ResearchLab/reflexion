@@ -4,7 +4,8 @@ import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 
-from alfworld_trial import run_trial
+# from alfworld_trial import run_trial
+from tapas_alfworld_trial import run_trial
 from generate_reflections import update_memory
 from tapas_alfworld_agents import ReflexionStrategy, TrajectoryStore  # ← tapas agents
 from utils import get_chat
