@@ -10,7 +10,7 @@ from utils import enumerate_resume, make_printv, write_jsonl, resume_success_cou
 from executors import executor_factory
 from generators import generator_factory, model_factory
 from generators.model import ModelBase, Message
-from programming_agents import (
+from programming_agents_tapas import (
     TrajectoryRecord,
     TrajectoryStore,
     format_retrieved_trajectories,
