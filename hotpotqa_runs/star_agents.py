@@ -2466,9 +2466,33 @@ class STARReactAgent:
     # Agent prompt — injects mismatch NOTE when prev expected != actual
     # ------------------------------------------------------------------
 
+    # def _build_agent_prompt(self, knowledge_str: str = '') -> str:
+    #     parts = []
+    #     if knowledge_str:
+    #         parts.append(knowledge_str)
+    #     parts.append(self.react_examples)
+    #     parts.append('(END OF EXAMPLES)')
+    #     if self.reflections_str:
+    #         parts.append(self.reflections_str)
+    #     parts.append(f"Question: {self.question}")
+    #     parts.append(f"Scratchpad:\n{self.scratchpad}")
+    #     # ── Mismatch injection: tell LLM to write CORRECTION when wrong ───────
+    #     if (self._prev_expected and self._prev_observation
+    #             and not self._prediction_matched(self._prev_expected,
+    #                                               self._prev_observation)):
+    #         parts.append(
+    #             f"NOTE: Your previous prediction was WRONG.\n"
+    #             f"You expected: {self._prev_expected[:100]}\n"
+    #             f"You got:      {self._prev_observation[:100]}\n"
+    #             f"You MUST include a CORRECTION rule in your response."
+    #         )
+    #     parts.append(STAR_STEP_INSTRUCTION)
+    #     return '\n\n'.join(parts)
+
     def _build_agent_prompt(self, knowledge_str: str = '') -> str:
         parts = []
-        if knowledge_str:
+        scratchpad_tokens = len(self.enc.encode(self.scratchpad))
+        if knowledge_str and scratchpad_tokens < 800:   # skip if scratchpad already long
             parts.append(knowledge_str)
         parts.append(self.react_examples)
         parts.append('(END OF EXAMPLES)')
@@ -2476,10 +2500,10 @@ class STARReactAgent:
             parts.append(self.reflections_str)
         parts.append(f"Question: {self.question}")
         parts.append(f"Scratchpad:\n{self.scratchpad}")
-        # ── Mismatch injection: tell LLM to write CORRECTION when wrong ───────
         if (self._prev_expected and self._prev_observation
+                and scratchpad_tokens < 800          # ← same gate
                 and not self._prediction_matched(self._prev_expected,
-                                                  self._prev_observation)):
+                                                self._prev_observation)):
             parts.append(
                 f"NOTE: Your previous prediction was WRONG.\n"
                 f"You expected: {self._prev_expected[:100]}\n"
