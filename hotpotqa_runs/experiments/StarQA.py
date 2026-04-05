@@ -195,7 +195,7 @@ agents = [
         key               = row['answer'],
         trajectory_store  = trajectory_store,  # ← RAR
         knowledge_store   = knowledge_store,   # ← STAR
-        retrieval_k       = 3,
+        retrieval_k       = 2,
         use_reflection    = True,
     )
     for _, row in hotpot.iterrows()
