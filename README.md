@@ -1,165 +1,225 @@
-# Retrieval Reflexion: Retrieval Aided Language Agents with Verbal Reinforcement Learning
+# Retrieval-Augmented Reflexion: Retrieval-Aided Language Agents with Verbal Reinforcement Learning
 
-![Reflexion RL diagram](./figures/reflexion-retrieval.png)
+![Reflexion RAR diagram](./figures/retrieval-diagram.png)
 
-## To Run: reasoning (HotPotQA)
+## Overview
 
-We have provided a set of scripts to easily run, explore, and interact with the results of the reasoning experiments. Each experiment consists of a random sample of 100 questions from the HotPotQA distractor dataset. Each question in the sample is attempted by an agent with a specific type and reflexion strategy.
+We extend the Reflexion framework with **Retrieval-Augmented Reflexion (RAR)**, a novel strategy that retrieves semantically similar past trajectories from a persistent episodic memory store, diversifies them via Maximum Marginal Relevance (MMR), and uses them as contrastive context when generating reflections. This allows the agent to learn from a broader set of past experiences — both failures and successes — rather than relying solely on the most recent attempt.
 
-We extend the original Reflexion framework with a novel **Retrieval-Augmented Reflexion** strategy. Instead of relying solely on the most recent failed trajectory, our method retrieves the top-k semantically similar past trajectories from an episodic memory store, diversified via Maximum Marginal Relevance (MMR), and uses them as contrastive context when generating reflections. This allows the agent to learn from a broader set of past experiences — both failures and successes — rather than just the immediate previous attempt.
+We implement and evaluate five strategies across three tasks:
 
-We implement and evaluate four strategies across three tasks (HotPotQA, ALFWorld, Programming(HumanEval)):
+| Strategy       | Description                                                                                                                                     |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Simple**     | Single generation attempt, no reflection or memory (HumanEval only)                                                                             |
+| **ReAct**      | No memory, no reflection. Agent attempts each task from scratch every trial                                                                     |
+| **CoT + GT**   | Chain-of-thought with ground truth context injected (Wikipedia passage or docstring)                                                            |
+| **Reflexion**  | Standard Reflexion with last 3 reflections stored in memory                                                                                     |
+| **ExpeL**      | Two-phase: gather trajectories via Reflexion, extract insights, evaluate with injected insights                                                 |
+| **RAR (ours)** | Retrieves top-k past trajectories via semantic similarity and error-class matching, diversified via MMR, used as contrastive reflection context |
 
-- **ReAct (base):** No memory, no reflection. Agent attempts each task from scratch every trial.
-- **Reflexion:** Standard reflexion with the last 3 reflections stored in memory.
-- **CoT + Context:** Chain-of-thought reasoning with ground truth context injected as structured input (HotPotQA: Wikipedia passage, Programming: docstring).
-- **Retrieval-Augmented Reflexion (ours):** Retrieves top-k similar past trajectories using semantic similarity and error class matching, diversified via MMR, and uses them to generate richer, contrastive reflections.
+---
 
-Three experiment files are provided for HotPotQA, corresponding to different strategies:
+## Setup
 
-- `hotpotqa_runs/experiments/cot_context.py` — CoT + Context
-- `hotpotqa_runs/experiments/ReactQA.py` — ReAct baseline
-- `hotpotqa_runs/experiments/ReflexionQA.py` — Standard Reflexion
-- `hotpotqa_runs/experiments/RetrievalQA.py` — Retrieval-Augmented Reflexion (ours)
+### Prerequisites
 
-### Setup
+- Python 3.9+
+- An OpenAI-compatible API key
 
-To get started:
-
-1. Clone this repo and move to the HotPotQA directory:
-
-```bash
-git clone https://github.com/USD-AI-ResearchLab/reflexion.git && cd ./hotpotqa_runs
-```
-
-2. Install the module dependencies into your environment:
-
-```bash
-pip install -r requirements.txt
-```
-
-3. Set `OPENAI_API_KEY` environment variable to your OpenAI API key:
+### Environment variable
 
 ```bash
 export OPENAI_API_KEY=<your key>
 ```
 
-#### Agent Types
+---
 
-Agent type is determined by the experiment you choose to run. The available agent types include:
+## HotPotQA (Reasoning)
 
-- `ReAct` - ReAct Agent
-
-- `CoT_context` - CoT Agent given supporting context about the question
-
-- `Reflexion` - Reflexion using last attempt and reflexion
-- `Retrieval Reflexion` - Retrieval augmented reflexion
-
-The scripts for each agent type is located in the `./hotpot_runs/experiments` directory.
-
-#### Reflexion Strategies
-
-Each script allows you to specify the reflexion strategy to be used by the agents. The available reflexion strategies, which are defined in a `ReflexionStrategy` `Enum`, include:
-
-- `ReflexionStrategy.NONE` - The agent is not given any information about its last attempt. Used as the ReAct baseline as well as CoT with added context.
-
-- `ReflexionStrategy.LAST_ATTEMPT_AND_REFLEXION` - The agent is given both its reasoning trace and self-reflection on the last attempt as context. Used as reflexion baseline.
-
-- `ReflexionStrategy.RETRIEVED_TRAJECTORY_REFLEXION` _(ours)_ - The agent retrieves the top-k most similar past trajectories from an episodic memory store, scored by semantic similarity and error class match, diversified via Maximum Marginal Relevance (MMR). These trajectories — both past failures and successes — are used as contrastive context when generating the reflection for the current failed attempt, enabling richer and more targeted self-improvement across trials.
-
-### To Run: decision-making (AlfWorld)
-
-Clone this repo and move to the AlfWorld directory
+Each experiment runs 100 randomly sampled questions from the HotPotQA distractor dataset across 5 trials.
 
 ```bash
-git clone https://github.com/USD-AI-ResearchLab/reflexion.git && cd ./alfworld_runs
+git clone https://github.com/USD-AI-ResearchLab/reflexion.git
+cd hotpotqa_runs
+pip install -r requirements.txt
+cd experiments
 ```
 
-Specify the run parameters in `./run_reflexion.sh`.
-`num_trials`: number of iterative learning steps
-`num_envs`: number of task-environment pairs per trial
-`run_name`: the name for this run
-`use_memory`: use persisting memory to store self-reflections (turn off to run a baseline run)
-`is_resume`: use logging directory to resume a previous run
-`resume_dir`: the logging directory from which to resume the previous run
-`start_trial_num`: if resume run, then the trial number of which to start
-
-Run the trial (Example for retrieval reflexion trial)
+### Run scripts
 
 ```bash
-./prog_retrieval_reflexion.sh
+python ReactQA.py          # ReAct baseline
+python CoTQA.py            # CoT + Ground Truth
+python ReflexionQA.py      # Standard Reflexion
+python RetrievalQA.py      # RAR (ours)
+python ExpelQA.py         # ExpeL baseline
 ```
 
-The logs will be sent to `./root/<run_name>`.
+Results are saved to `../root/<strategy>/`.
 
-## Programming Task (HumanEval)
+---
 
-We evaluate four strategies on the [HumanEval](https://github.com/openai/human-eval) Python programming benchmark consisting of 164 function generation problems. Each problem provides a function signature and docstring, and the agent must generate a correct implementation that passes all unit tests.
+## ALFWorld (Sequential Decision-Making)
 
-### Setup
+Each experiment runs 134 household environments across 10 trials.
+
+```bash
+cd alfworld_runs
+pip install -r requirements.txt
+```
+
+### Run scripts
+
+```bash
+python main.py --strategy base               --num_trials 10 --num_envs 134 --run_name react_run      --model gpt-oss
+python main.py --strategy reflexion          --num_trials 10 --num_envs 134 --run_name reflexion_run  --model gpt-oss --use_memory
+python main.py --strategy retrieved_trajectory_reflexion \
+               --num_trials 10 --num_envs 134 --run_name rar_run --model gpt-oss --use_memory
+python main.py --strategy expel --expel_n_gather 10 \
+               --num_trials 11 --num_envs 134 --run_name expel_run --model gpt-oss
+```
+
+Results are saved to `./root/<run_name>/`.
+
+---
+
+## HumanEval Hard (Code Generation)
+
+Each experiment runs 50 curated HumanEval Hard problems across 10 iterations.
 
 ```bash
 cd programming_runs
 pip install -r requirements.txt
 ```
 
-### Download the dataset
-
-The HumanEval dataset is already provided in the `benchmarks/` directory:
-
-```
-benchmarks/
-  humaneval-py.jsonl
-```
-
-### Running the experiments
-
-Four strategies are available, each with a corresponding shell script:
-
-**Experiment 1: Simple Generation (baseline)**
+### Run scripts
 
 ```bash
-./prog_simple_generation.sh
+python main.py --strategy simple     --run_name simple    --root_dir root \
+               --dataset_path ./benchmarks/humaneval-py_hardest50.jsonl \
+               --language py --model gpt-oss --max_iters 10 --pass_at_k 1
+
+python main.py --strategy cot_gt     --run_name cot_gt    --root_dir root \
+               --dataset_path ./benchmarks/humaneval-py_hardest50.jsonl \
+               --language py --model gpt-oss --max_iters 10 --pass_at_k 1
+
+python main.py --strategy reflexion  --run_name reflexion --root_dir root \
+               --dataset_path ./benchmarks/humaneval-py_hardest50.jsonl \
+               --language py --model gpt-oss --max_iters 10 --pass_at_k 1
+
+python main.py --strategy retrieval  --run_name retrieval --root_dir root \
+               --dataset_path ./benchmarks/humaneval-py_hardest50.jsonl \
+               --language py --model gpt-oss --max_iters 10 --pass_at_k 1
+
+python main.py --strategy expel      --run_name expel     --root_dir root \
+               --dataset_path ./benchmarks/humaneval-py_hardest50.jsonl \
+               --language py --model gpt-oss --max_iters 10 --pass_at_k 1
 ```
 
-**Experiment 2: CoT + Ground Truth Context**
+Results are saved to `root/<run_name>/`.
+
+---
+
+## Running on Kubernetes (NRP Nautilus)
+
+All experiments can be submitted as Kubernetes batch jobs using the YAML files.
+
+### Before submitting any job
+
+Open the YAML file and update the following fields:
+
+```yaml
+metadata:
+  namespace: <your-namespace> # e.g. kc-ai-research-lab — MUST match your Nautilus namespace
+...
+env:
+  - name: OPENAI_API_KEY
+    valueFrom:
+      secretKeyRef:
+        name: <your-secret-name> # e.g. openai-secret — must exist in your namespace
+        key: api-key # must match the key name inside your secret
+...
+volumes:
+  - name: results-volume
+    persistentVolumeClaim:
+      claimName: <your-pvc-name> # e.g. reflexion-data-pvc — must exist in your namespace
+```
+
+To create the API key secret if it does not already exist:
 
 ```bash
-./prog_cot_gt.sh
+kubectl create secret generic openai-secret \
+  --from-literal=api-key=<your-api-key> \
+  -n <your-namespace>
 ```
 
-**Experiment 3: Standard Reflexion**
+### Submit a job
 
 ```bash
-./prog_reflexion.sh
+kubectl apply -f k8s/<job-file>.yaml -n <your-namespace>
 ```
 
-**Experiment 4: Retrieval-Augmented Reflexion (ours)**
+### Monitor job status
 
 ```bash
-./prog_retrieval_reflexion.sh
+kubectl get jobs -n <your-namespace>
+kubectl logs job/<job-name> -n <your-namespace>
 ```
 
-### Strategy details
+### Copy results from PVC
 
-- **Simple:** Single generation attempt per problem, no reflection or memory.
-- **CoT + GT:** Chain-of-thought reasoning with the function docstring injected as structured ground truth context before generation. Tests whether explicit specification guidance improves code generation.
-- **Reflexion:** Iterative self-improvement — the agent generates code, runs internal unit tests, reflects on failures, and retries up to `max_iters` times.
-- **Retrieval-Augmented Reflexion (ours):** Extends Reflexion by retrieving the top-k most similar past problems from an episodic trajectory store, scored by function signature similarity and error class match, diversified via MMR. Retrieved trajectories provide contrastive context (both failures and successes) when generating reflections, enabling cross-problem learning.
+```bash
+kubectl run pvc-reader --image=busybox --restart=Never \
+  --overrides='{"spec":{"volumes":[{"name":"data","persistentVolumeClaim":{"claimName":"<your-pvc-name>"}}],"containers":[{"name":"pvc-reader","image":"busybox","command":["sleep","3600"],"volumeMounts":[{"mountPath":"/data","name":"data"}]}]}}' \
+  -n <your-namespace>
 
-### Metrics and results
+kubectl cp <your-namespace>/pvc-reader:/data ./results
+kubectl delete pod pvc-reader -n <your-namespace>
+```
 
-Results are saved to `root/<run_name>/` and include:
+### Available job files
 
-### Configuration
+| File                          | Task           | Strategy  |
+| ----------------------------- | -------------- | --------- |
+| `hotpot_react_job.yaml`       | HotPotQA       | ReAct     |
+| `hotpot_reflexion_job.yaml`   | HotPotQA       | Reflexion |
+| `hotpot_retrieval_job.yaml`   | HotPotQA       | RAR       |
+| `hotpot_expel_job.yaml`       | HotPotQA       | ExpeL     |
+| `alfworld_react_job.yaml`     | ALFWorld       | ReAct     |
+| `alfworld_reflexion_job.yaml` | ALFWorld       | Reflexion |
+| `alfworld_retrieval_job.yaml` | ALFWorld       | RAR       |
+| `alfworld_expel_job.yaml`     | ALFWorld       | ExpeL     |
+| `prog_simple_job.yaml`        | HumanEval Hard | Simple    |
+| `prog_reflexion_job.yaml`     | HumanEval Hard | Reflexion |
+| `prog_retrieval_job.yaml`     | HumanEval Hard | RAR       |
+| `prog_expel_job.yaml`         | HumanEval Hard | ExpeL     |
 
-Key arguments for `main.py`:
+---
 
-| Argument         | Description                                                   | Default  |
-| ---------------- | ------------------------------------------------------------- | -------- |
-| `--strategy`     | One of `simple`, `cot_gt`, `reflexion`, `retrieval_reflexion` | required |
-| `--max_iters`    | Max self-improvement iterations per problem                   | 10       |
-| `--pass_at_k`    | Number of generation attempts per problem                     | 1        |
-| `--num_problems` | Number of problems to run (-1 for full dataset)               | -1       |
-| `--model`        | Model name                                                    | required |
-| `--language`     | `py` or `rs`                                                  | required |
+## Metrics
+
+All experiments report four metrics at each trial or iteration:
+
+| Metric           | Description                                                 |
+| ---------------- | ----------------------------------------------------------- |
+| **Success Rate** | Cumulative fraction of tasks solved at or before trial $t$  |
+| **Fail Rate**    | Fraction of tasks attempted and failed at trial $t$         |
+| **Halt Rate**    | Fraction of tasks where the agent exhausted its step budget |
+| **Avg Steps**    | Mean number of environment interactions per active task     |
+
+Results CSVs follow the format: `Trial,SuccessRate,FailRate,HaltedRate,AvgSteps`.
+
+---
+
+<!-- ## Citation
+
+If you use this code, please cite the original Reflexion paper and this work:
+
+```bibtex
+@inproceedings{shinn2023reflexion,
+  title     = {Reflexion: Language Agents with Verbal Reinforcement Learning},
+  author    = {Shinn, Noah and Cassano, Federico and Berman, Edward and Gopinath, Ashwin and Narasimhan, Karthik and Yao, Shunyu},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+  year      = {2023}
+}
+``` -->
