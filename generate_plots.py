@@ -30,19 +30,25 @@ HOTPOT = {
     'CoT+GT':      f'{DATA_ROOT}/hotpot/cot/',
     'Reflexion':   f'{DATA_ROOT}/hotpot/reflexion/',
     'RAR (Ours)':  f'{DATA_ROOT}/hotpot/retrieval/',
+    'Expel (Gather)': f'{DATA_ROOT}/hotpot/expel/100_questions_gather_metrics.csv',
+    'Expel (Eval)': f'{DATA_ROOT}/hotpot/expel/100_questions_eval_metrics.csv'
 }
 
 ALFWORLD = {
     'ReAct':       f'{DATA_ROOT}/alf/react/',
     'Reflexion':   f'{DATA_ROOT}/alf/reflexion/',
     'RAR (Ours)':  f'{DATA_ROOT}/alf/retrieval/',
+    'Expel (Gather)': f'{DATA_ROOT}/alf/expel/134_envs_gather_metrics.csv',
+    'Expel (Eval)': f'{DATA_ROOT}/alf/expel/134_envs_eval_metrics.csv'
 }
 
 HUMANEVAL = {
-    'Simple':      f'{DATA_ROOT}/prog/simple/',
-    'CoT+GT':      f'{DATA_ROOT}/prog/cot_gt/',
-    'Reflexion':   f'{DATA_ROOT}/prog/reflexion/',
-    'RAR (Ours)':  f'{DATA_ROOT}/prog/retrieval/',
+    'Simple':      f'{DATA_ROOT}/prog/simple/simple_humaneval_hard/',
+    'CoT+GT':      f'{DATA_ROOT}/prog/cot_gt/cot_gt_humaneval_hard/',
+    'Reflexion':   f'{DATA_ROOT}/prog/reflexion/reflexion_humaneval_hard/',
+    'RAR (Ours)':  f'{DATA_ROOT}/prog/retrieval/retrieval_humaneval_hard',
+    'Expel (Gather)': f'{DATA_ROOT}/prog/expel/50_problems_metrics_gather_metrics.csv',
+    'Expel (Eval)': f'{DATA_ROOT}/prog/expel/50_problems_metrics_eval_metrics.csv'
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
