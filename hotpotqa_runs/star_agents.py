@@ -425,7 +425,7 @@ class STARReactAgent:
               f'{sum(1 for r in retrieved if not r.success)} failures)')
 
         # ── STAR: step knowledge as additional context ────────────────────────
-        recent_knowledge = self.knowledge_store.retrieve(self.question, k=3)
+        recent_knowledge = self.knowledge_store.retrieve(self.question, k=2)
         knowledge_ctx    = format_step_knowledge(recent_knowledge)
 
         # ── Build reflection prompt: same as RAR + step knowledge ─────────────
