@@ -341,11 +341,11 @@ agents = [
         key                      = row['answer'],
         trajectory_store         = trajectory_store,
         knowledge_store          = knowledge_store,
-        knowledge_k              = 2,   # rules per step from StepKnowledgeStore
+        knowledge_k              = 3,   # rules per step from StepKnowledgeStore
         trajectory_k             = 5,   # trajectories retrieved at reflection
         trajectory_max_failures  = 3,   # max failure trajectories at reflection
         trajectory_max_successes = 2,   # max success trajectories at reflection
-        step_reflection_k        = 3,   # trajectory reflections per step prompt
+        step_reflection_k        = 1,   # trajectory reflections per step prompt
         use_reflection           = True,
     )
     for _, row in hotpot.iterrows()
