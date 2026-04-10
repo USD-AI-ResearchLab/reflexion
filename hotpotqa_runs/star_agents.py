@@ -2367,7 +2367,7 @@ def parse_action(string: str):
 def format_step(step: str) -> str:
     return step.strip('\n').strip().replace('\n', '') if step else ''
 
-def truncate_scratchpad(scratchpad: str, n_tokens: int = 1200,
+def truncate_scratchpad(scratchpad: str, n_tokens: int = 800,
                         tokenizer=gpt2_enc) -> str:
     lines = scratchpad.split('\n')
     observations = list(filter(lambda x: x.startswith('Observation'), lines))
