@@ -2229,14 +2229,14 @@ class STARReactAgent:
                 positive      = False,
             ))
             print(f'  [STAR] FIX [{storage_key}]: {correction[:80]}')
-        elif expected and observation and self._prediction_matched(expected, observation):
-            rule = f"{action_type}[X]: {expected[:100]}"
-            self.knowledge_store.add(StepKnowledge(
-                action_intent = storage_key,
-                rule          = rule,
-                positive      = True,
-            ))
-            print(f'  [STAR] OK [{storage_key}]')
+        # elif expected and observation and self._prediction_matched(expected, observation):
+        #     rule = f"{action_type}[X]: {expected[:100]}"
+        #     self.knowledge_store.add(StepKnowledge(
+        #         action_intent = storage_key,
+        #         rule          = rule,
+        #         positive      = True,
+        #     ))
+        #     print(f'  [STAR] OK [{storage_key}]')
 
         # 6. Store state for next step
         self._prev_expected    = expected
@@ -2367,7 +2367,7 @@ def parse_action(string: str):
 def format_step(step: str) -> str:
     return step.strip('\n').strip().replace('\n', '') if step else ''
 
-def truncate_scratchpad(scratchpad: str, n_tokens: int = 400,
+def truncate_scratchpad(scratchpad: str, n_tokens: int = 800,
                         tokenizer=gpt2_enc) -> str:
     lines = scratchpad.split('\n')
     observations = list(filter(lambda x: x.startswith('Observation'), lines))

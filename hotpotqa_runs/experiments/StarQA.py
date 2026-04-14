@@ -488,7 +488,7 @@ agents = [
         question        = row['question'],
         key             = row['answer'],
         knowledge_store = knowledge_store,
-        knowledge_k     = 1,
+        knowledge_k     = 2,
         use_reflection  = True,
     )
     for _, row in hotpot.iterrows()
