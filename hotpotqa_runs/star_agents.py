@@ -1930,11 +1930,26 @@ def classify_question_type(question: str) -> str:
         return 'search-category'
     return 'search-multi-hop'
 
+# def classify_question_type_llm(question: str, llm_fn) -> str:
+#     """
+#     Classify question into abstract retrieval key using LLM.
+#     Single short call — no fewshots needed.
+#     """
+#     prompt = (
+#         f"Classify this question into a 3-5 word abstract search pattern.\n"
+#         f"Question: {question}\n\n"
+#         f"Reply with ONLY a short hyphenated key, e.g.:\n"
+#         f"search-person-role, search-location, search-date, "
+#         f"search-comparison, search-multi-hop, search-film-director, "
+#         f"search-entity-category\n\n"
+#         f"Key:"
+#     )
+#     raw = llm_fn(prompt).strip().lower()
+#     # Clean up — take first word/phrase, strip punctuation
+#     key = re.sub(r'[^a-z0-9\-]', '', raw.split('\n')[0].strip())
+#     return key if key else 'search-multi-hop'
+
 def classify_question_type_llm(question: str, llm_fn) -> str:
-    """
-    Classify question into abstract retrieval key using LLM.
-    Single short call — no fewshots needed.
-    """
     prompt = (
         f"Classify this question into a 3-5 word abstract search pattern.\n"
         f"Question: {question}\n\n"
@@ -1944,11 +1959,9 @@ def classify_question_type_llm(question: str, llm_fn) -> str:
         f"search-entity-category\n\n"
         f"Key:"
     )
-    raw = llm_fn(prompt).strip().lower()
-    # Clean up — take first word/phrase, strip punctuation
+    raw = llm_fn(prompt, REFLECTION_SYSTEM_PROMPT).strip().lower()
     key = re.sub(r'[^a-z0-9\-]', '', raw.split('\n')[0].strip())
     return key if key else 'search-multi-hop'
-
 # ---------------------------------------------------------------------------
 # Step Knowledge
 # ---------------------------------------------------------------------------
