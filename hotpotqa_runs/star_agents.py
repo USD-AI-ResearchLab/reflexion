@@ -2174,16 +2174,20 @@ class STARReactAgent:
 
     def step(self) -> None:
         # 1. Retrieve knowledge_k rules
-        # retrieval_query = self._prev_key if self._prev_key \
-        #                   else classify_question_type(self.question)
-        if self._prev_key:
-            retrieval_query = self._prev_key
-        elif self.step_n == 1:
-            retrieval_query = classify_question_type_llm(
-                self.question, self.reflect_llm)
-            print(f'  [STAR] LLM question type: "{retrieval_query}"')
-        else:
-            retrieval_query = 'search-multi-hop'   # fallback if key missing
+        retrieval_query = self._prev_key if self._prev_key \
+                          else classify_question_type(self.question)
+
+
+        # if self._prev_key:
+        #     retrieval_query = self._prev_key
+        # elif self.step_n == 1:
+        #     retrieval_query = classify_question_type_llm(
+        #         self.question, self.reflect_llm)
+        #     print(f'  [STAR] LLM question type: "{retrieval_query}"')
+        # else:
+        #     retrieval_query = 'search-multi-hop'   # fallback if key missing
+        
+
         retrieved_knowledge = self.knowledge_store.retrieve(
             retrieval_query, k=self.knowledge_k)
         knowledge_str = format_step_knowledge(retrieved_knowledge)
