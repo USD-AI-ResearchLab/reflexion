@@ -260,6 +260,7 @@ def alfworld_run_star(
         if to_print:
             print(f'> {action}')
             print(observation)
+            print('OK')
             sys.stdout.flush()
 
         # Store knowledge under KEY — only when the previous prediction was wrong
