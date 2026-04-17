@@ -978,6 +978,7 @@ from cot_gt import run_cot_gt
 from retrieval_reflexion import run_retrieval_reflexion
 from test_acc import run_test_acc
 from programming_agents import TrajectoryStore
+from star_reflexion import run_star_reflexion
 from utils import read_jsonl, read_jsonl_gz
 
 import sys
@@ -1026,6 +1027,9 @@ def strategy_factory(strategy: str):
         return kwargs_wrapper_gen(run_immediate_refinement,delete_keys=["expansion_factor", "trajectory_store"])
     elif strategy == "test-acc":
         return kwargs_wrapper_gen(run_test_acc,           delete_keys=["expansion_factor", "max_iters", "trajectory_store"])
+    elif strategy == "star":
+        return kwargs_wrapper_gen(run_star_reflexion,
+                   delete_keys=["expansion_factor", "trajectory_store"])
     elif strategy == "expel":
         def expel_noop(**kwargs): pass
         return expel_noop

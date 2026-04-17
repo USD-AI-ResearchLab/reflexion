@@ -792,6 +792,8 @@ from alfworld_trial import run_trial
 from generate_reflections import update_memory
 from alfword_agents import ReflexionStrategy, TrajectoryStore
 from utils import get_chat
+from star_alfworld_trial import run_trial_star
+from star_alfworld_agents import StepKnowledgeStore
 
 import sys
 sys.path.append('..')
@@ -814,8 +816,10 @@ def get_args():
     parser.add_argument(
         "--strategy", type=str, default="base",
         choices=["base", "reflexion", "expert_context",
-                 "retrieved_trajectory_reflexion", "expel"],
+                 "retrieved_trajectory_reflexion", "expel", "star"],
     )
+    parser.add_argument("--knowledge_k", type=int, default=2,
+                        help="Rules retrieved per step for STAR strategy")
     parser.add_argument("--expel_n_gather", type=int, default=3)
     args = parser.parse_args()
     assert args.num_trials > 0
@@ -884,12 +888,19 @@ def save_metrics_log(base_path, trial_numbers, success_rates, fail_rates,
 
 def main(args) -> None:
 
+    # ── STAR: self-contained strategy — handled separately from the others ───────
+    is_star = args.strategy == 'star'
+    if is_star:
+        star_knowledge_store = StepKnowledgeStore()
+        star_knowledge_k     = getattr(args, 'knowledge_k', 2)
+
     strategy_map = {
         'base':                           ReflexionStrategy.NONE,
         'expert_context':                 ReflexionStrategy.EXPERT_CONTEXT,
         'reflexion':                      ReflexionStrategy.REFLEXION,
         'retrieved_trajectory_reflexion': ReflexionStrategy.RETRIEVED_TRAJECTORY_REFLEXION,
         'expel':                          ReflexionStrategy.REFLEXION,
+        'star':                           ReflexionStrategy.NONE,   # placeholder
     }
     strategy: ReflexionStrategy = strategy_map[args.strategy]
 
@@ -989,17 +1000,29 @@ Starting run:
                 run_expel    = None
 
             try:
-                env_configs = run_trial(
-                    trial_log_path=trial_log_path,
-                    world_log_path=world_log_path,
-                    trial_idx=trial_idx,
-                    env_configs=env_configs,
-                    use_memory=run_memory,
-                    model=args.model,
-                    strategy=run_strategy,
-                    trajectory_store=trajectory_store,
-                    expel=run_expel,
-                )
+                if is_star:
+                    env_configs = run_trial_star(
+                        trial_log_path  = trial_log_path,
+                        world_log_path  = world_log_path,
+                        trial_idx       = trial_idx,
+                        env_configs     = env_configs,
+                        model           = args.model,
+                        knowledge_store = star_knowledge_store,
+                        knowledge_k     = star_knowledge_k,
+                        use_reflection  = True,
+                    )
+                else:
+                    env_configs = run_trial(
+                        trial_log_path=trial_log_path,
+                        world_log_path=world_log_path,
+                        trial_idx=trial_idx,
+                        env_configs=env_configs,
+                        use_memory=run_memory,
+                        model=args.model,
+                        strategy=run_strategy,
+                        trajectory_store=trajectory_store,
+                        expel=run_expel,
+                    )
             except Exception as e:
                 print(f'Trial {trial_idx} failed: {e}')
                 import traceback; traceback.print_exc()
