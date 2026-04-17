@@ -262,10 +262,14 @@ def alfworld_run_star(
             print(observation)
             sys.stdout.flush()
 
-        # Store knowledge under KEY
+        # Store knowledge under KEY — only when the previous prediction was wrong
         storage_key = step_key if step_key else re.sub(r'\s+', '-', action.split()[0])[:40]
 
-        if correction and len(correction) > 15:
+        prev_mismatch = (
+            prev_expected and prev_observation
+            and not prediction_matched_alfworld(prev_expected, prev_observation)
+        )
+        if correction and len(correction) > 15 and prev_mismatch:
             knowledge_store.add(StepKnowledge(
                 action_intent=storage_key,
                 rule=correction,
