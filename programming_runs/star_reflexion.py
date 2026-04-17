@@ -290,7 +290,7 @@ def run_star_reflexion(
             print(f'  [STAR] Iter 1 | passing={is_passing} | KEY={step_key}')
 
             # Store correction if prediction was wrong and correction is substantive
-            if correction and len(correction) > 30:
+            if correction and len(correction) > 15:
                 storage_key = step_key if step_key else retrieval_query
                 knowledge_store.add(StepKnowledge(
                     action_intent=storage_key,
@@ -353,7 +353,7 @@ def run_star_reflexion(
                 print(f'  [STAR] Iter {cur_iter+1} | passing={is_passing} | KEY={step_key}')
 
                 # Store correction
-                if correction and len(correction) > 30:
+                if correction and len(correction) > 15:
                     storage_key = step_key if step_key else retrieval_query
                     knowledge_store.add(StepKnowledge(
                         action_intent=storage_key,

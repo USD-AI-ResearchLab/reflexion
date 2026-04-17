@@ -15,7 +15,6 @@ Follows the same loop structure as alfworld_trial.py but:
 import os
 import re
 import sys
-import json
 import yaml
 import importlib
 import alfworld
@@ -32,14 +31,9 @@ from star_alfworld_agents import (
     prediction_matched_alfworld,
     STAR_STEP_INSTRUCTION,
 )
+from star_alfworld_fewshots import STAR_FEWSHOTS
 
 from typing import List, Dict, Any, Tuple, Optional
-
-
-FOLDER = './prompts'
-PROMPT_FILE = 'alfworld_3prompts.json'
-with open(os.path.join(FOLDER, PROMPT_FILE), 'r') as f:
-    d = json.load(f)
 
 
 # ---------------------------------------------------------------------------
@@ -271,7 +265,7 @@ def alfworld_run_star(
         # Store knowledge under KEY
         storage_key = step_key if step_key else re.sub(r'\s+', '-', action.split()[0])[:40]
 
-        if correction and len(correction) > 30:
+        if correction and len(correction) > 15:
             knowledge_store.add(StepKnowledge(
                 action_intent=storage_key,
                 rule=correction,
@@ -377,9 +371,10 @@ def run_trial_star(
             (k for k in ALFWORLD_TASK_TYPES if name.startswith(k)), 'pick_and_place')
         v = ALFWORLD_TASK_TYPES[task_type]
 
+        fewshot_1, fewshot_0 = STAR_FEWSHOTS[v]
         base_prompt = (
             'Interact with a household to solve a task. Here are two examples.\n'
-            + d[f'react_{v}_1'] + d[f'react_{v}_0']
+            + fewshot_1 + '\n\n' + fewshot_0
         )
 
         # Per-env persistent state (Reflexion LAST_ATTEMPT_AND_REFLEXION)
