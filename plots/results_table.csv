@@ -1,0 +1,7 @@
+Method,HotPotQA,ALFWorld,HumanEval Hard 50
+Simple,—,—,96.0%
+CoT+GT,46.0%,—,94.0%
+ReAct,49.0%,97.8%,—
+Reflexion,52.0%,59.7%,88.0%
+ExpeL,48.0%,43.3%,98.0%
+RAR (Ours),52.0%,90.3%,96.0%
