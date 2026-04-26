@@ -1,7 +1,7 @@
-Method,HotPotQA Success,HotPotQA Fail,HotPotQA Halt,HotPotQA AvgSteps,ALFWorld Success,ALFWorld Fail,ALFWorld Halt,ALFWorld AvgSteps,HumanEval Hard 50 Success,HumanEval Hard 50 Fail,HumanEval Hard 50 Halt,HumanEval Hard 50 AvgSteps
-Simple,—,—,—,—,—,—,—,—,0.9600,0.0000,0.0400,1.0000
-CoT+GT,0.4600,0.4700,0.0200,5.0000,—,—,—,—,0.9400,0.0000,0.0600,1.0000
-ReAct,0.4900,0.5100,0.0000,2.5741,0.9776,0.0224,0.0000,20.7313,—,—,—,—
-Reflexion,0.5200,0.4400,0.0400,3.3125,0.5970,0.3209,0.0821,16.2015,0.8800,0.0800,0.0400,2.2800
-ExpeL,0.4800,0.5200,0.0000,2.5900,0.4328,0.5299,0.0373,19.3731,0.9800,0.0000,0.0200,1.0000
-RAR (Ours),0.5200,0.4500,0.0300,3.4082,0.9030,0.0970,0.0000,19.3358,0.9600,0.0200,0.0200,1.9200
+Method,HotPotQA,HotPotQA LaTeX,ALFWorld,ALFWorld LaTeX,HumanEval Hard 50,HumanEval Hard 50 LaTeX
+Simple,—,—,—,—,96.0 ± 0.0,$96.0 \pm 0.0$
+CoT+GT,46.0 ± 0.0,$46.0 \pm 0.0$,—,—,92.7 ± 1.2,$92.7 \pm 1.2$
+ReAct,48.7 ± 0.6,$48.7 \pm 0.6$,93.8 ± 4.1,$93.8 \pm 4.1$,—,—
+Reflexion,50.0 ± 1.7,$50.0 \pm 1.7$,57.5 ± 3.9,$57.5 \pm 3.9$,92.0 ± 3.5,$92.0 \pm 3.5$
+ExpeL,47.3 ± 1.2,$47.3 \pm 1.2$,41.0 ± 5.2,$41.0 \pm 5.2$,94.7 ± 3.1,$94.7 \pm 3.1$
+RAR (Ours),52.0 ± 1.0,$52.0 \pm 1.0$,91.3 ± 2.6,$91.3 \pm 2.6$,94.0 ± 2.0,$94.0 \pm 2.0$

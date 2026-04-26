@@ -1,663 +1,270 @@
-# """
-# Summary Table Generator
-# ========================
-# Reads the same CONFIG as generate_plots.py and produces a CSV summary table:
-#   - For all standard methods: final trial SuccessRate
-#   - For ExpeL: eval CSV result (not gather)
-
-# Output: ./plots/results_table.csv
-# """
-
-# import os
-# import glob
-# import pandas as pd
-
-# DATA_ROOT = os.path.expanduser('~/Downloads/reflexion-res')
-
-# # ── Same CONFIG as generate_plots.py ────────────────────────────────────────
-
-# HOTPOT = {
-#     'ReAct':          f'{DATA_ROOT}/hotpot/react/',
-#     'CoT+GT':         f'{DATA_ROOT}/hotpot/cot/',
-#     'Reflexion':      f'{DATA_ROOT}/hotpot/reflexion/',
-#     'RAR (Ours)':     f'{DATA_ROOT}/hotpot/retrieval/',
-#     'ExpeL (Gather)': f'{DATA_ROOT}/hotpot/expel/100_questions_gather_metrics.csv',
-#     'ExpeL (Eval)':   f'{DATA_ROOT}/hotpot/expel/100_questions_eval_metrics.csv',
-# }
-
-# ALFWORLD = {
-#     'ReAct':          f'{DATA_ROOT}/alf/react/',
-#     'Reflexion':      f'{DATA_ROOT}/alf/reflexion/',
-#     'RAR (Ours)':     f'{DATA_ROOT}/alf/retrieval/',
-#     'ExpeL (Gather)': f'{DATA_ROOT}/alf/expel/134_envs_gather_metrics.csv',
-#     'ExpeL (Eval)':   f'{DATA_ROOT}/alf/expel/134_envs_eval_metrics.csv',
-# }
-
-# HUMANEVAL = {
-#     'Simple':         f'{DATA_ROOT}/prog/simple/simple_humaneval_hard/',
-#     'CoT+GT':         f'{DATA_ROOT}/prog/cot_gt/cot_gt_humaneval_hard/',
-#     'Reflexion':      f'{DATA_ROOT}/prog/reflexion/reflexion_humaneval_hard/',
-#     'RAR (Ours)':     f'{DATA_ROOT}/prog/retrieval/retrieval_humaneval_hard',
-#     'ExpeL (Gather)': f'{DATA_ROOT}/prog/expel/50_problems_metrics_gather_metrics.csv',
-#     'ExpeL (Eval)':   f'{DATA_ROOT}/prog/expel/50_problems_metrics_eval_metrics.csv',
-# }
-
-# OUTPUT_DIR   = './plots'
-# OUTPUT_CSV   = f'{OUTPUT_DIR}/results_table.csv'
-
-# # All methods in display order for the table
-# ALL_METHODS = [
-#     'Simple',
-#     'CoT+GT',
-#     'ReAct',
-#     'Reflexion',
-#     'ExpeL',
-#     'RAR (Ours)',
-# ]
-
-# # ── Helpers ──────────────────────────────────────────────────────────────────
-
-# def resolve_path(path):
-#     """Resolve folder → single CSV, or return file path if it exists."""
-#     if os.path.isdir(path):
-#         csvs = sorted(glob.glob(os.path.join(path, '*.csv')))
-#         if not csvs:
-#             return None
-#         if len(csvs) > 1:
-#             print(f"  WARNING: multiple CSVs in '{path}', using: {csvs[0]}")
-#         return csvs[0]
-#     if os.path.exists(path):
-#         return path
-#     return None
-
-
-# def get_final_success(csv_path):
-#     """Return last row SuccessRate from a CSV."""
-#     try:
-#         df = pd.read_csv(csv_path)
-#         return float(df['SuccessRate'].iloc[-1])
-#     except Exception as e:
-#         print(f"  ERROR reading {csv_path}: {e}")
-#         return None
-
-
-# def extract_score(config, method_key):
-#     """
-#     Extract final success rate for a method.
-#     For ExpeL: use Eval CSV (single row result).
-#     For all others: use last row of their CSV (final trial).
-#     """
-#     if method_key == 'ExpeL':
-#         # Find the Eval entry
-#         eval_key = 'ExpeL (Eval)'
-#         if eval_key not in config:
-#             return None
-#         path = resolve_path(config[eval_key])
-#         if path is None:
-#             return None
-#         return get_final_success(path)
-#     else:
-#         if method_key not in config:
-#             return None
-#         path = resolve_path(config[method_key])
-#         if path is None:
-#             return None
-#         return get_final_success(path)
-
-
-# # ── Build table ───────────────────────────────────────────────────────────────
-
-# def build_table():
-#     os.makedirs(OUTPUT_DIR, exist_ok=True)
-
-#     task_configs = {
-#         'HotPotQA':         HOTPOT,
-#         'ALFWorld':         ALFWORLD,
-#         'HumanEval Hard 50': HUMANEVAL,
-#     }
-
-#     rows = []
-#     for method in ALL_METHODS:
-#         row = {'Method': method}
-#         for task_name, config in task_configs.items():
-#             score = extract_score(config, method)
-#             if score is not None:
-#                 row[task_name] = f'{score * 100:.1f}%'
-#             else:
-#                 row[task_name] = '—'
-#         rows.append(row)
-
-#     df = pd.DataFrame(rows, columns=['Method', 'HotPotQA',
-#                                       'ALFWorld', 'HumanEval Hard 50'])
-#     df.to_csv(OUTPUT_CSV, index=False)
-#     print(f"\nResults table saved to: {OUTPUT_CSV}")
-#     print()
-#     print(df.to_string(index=False))
-#     return df
-
-
-# if __name__ == '__main__':
-#     build_table()
-
-
-# """
-# Table Generator
-# ================
-# Produces 4 CSV files:
-#   1. hotpot_table.csv     — HotPotQA per-trial success + final metrics
-#   2. alfworld_table.csv   — ALFWorld per-trial success + final metrics
-#   3. humaneval_table.csv  — HumanEval per-iteration success + final metrics
-#   4. combined_table.csv   — Final success rate only, all tasks side by side
-
-# ExpeL rule: use Eval CSV for score, not Gather.
-# Standard methods: final row = final trial.
-# """
-
-# import os
-# import glob
-# import pandas as pd
-
-# DATA_ROOT = os.path.expanduser('~/Downloads/reflexion-res')
-# OUTPUT_DIR = './plots'
-
-# # ── CONFIG (same as generate_plots.py) ───────────────────────────────────────
-
-# HOTPOT = {
-#     'ReAct':          f'{DATA_ROOT}/hotpot/react/',
-#     'CoT+GT':         f'{DATA_ROOT}/hotpot/cot/',
-#     'Reflexion':      f'{DATA_ROOT}/hotpot/reflexion/',
-#     'ExpeL':          f'{DATA_ROOT}/hotpot/expel/100_questions_eval_metrics.csv',
-#     'RAR (Ours)':     f'{DATA_ROOT}/hotpot/retrieval/',
-# }
-
-# ALFWORLD = {
-#     'ReAct':          f'{DATA_ROOT}/alf/react/',
-#     'Reflexion':      f'{DATA_ROOT}/alf/reflexion/',
-#     'ExpeL':          f'{DATA_ROOT}/alf/expel/134_envs_eval_metrics.csv',
-#     'RAR (Ours)':     f'{DATA_ROOT}/alf/retrieval/',
-# }
-
-# HUMANEVAL = {
-#     'Simple':         f'{DATA_ROOT}/prog/simple/simple_humaneval_hard/',
-#     'CoT+GT':         f'{DATA_ROOT}/prog/cot_gt/cot_gt_humaneval_hard/',
-#     'Reflexion':      f'{DATA_ROOT}/prog/reflexion/reflexion_humaneval_hard/',
-#     'ExpeL':          f'{DATA_ROOT}/prog/expel/50_problems_metrics_eval_metrics.csv',
-#     'RAR (Ours)':     f'{DATA_ROOT}/prog/retrieval/retrieval_humaneval_hard',
-# }
-
-# # Which trial indices to show in the per-task tables (0-indexed rows in CSV)
-# # These correspond to trial 0, midpoint, final
-# HOTPOT_TRIALS   = [0, 2, 4]   # trials 1, 3, 5
-# ALFWORLD_TRIALS = [0, 4, 9]   # trials 1, 5, 10
-# HUMANEVAL_ITERS = [0, 4, 9]   # iterations 1, 5, 10
-
-
-# # ── Helpers ───────────────────────────────────────────────────────────────────
-
-# def resolve_path(path):
-#     if os.path.isdir(path):
-#         csvs = sorted(glob.glob(os.path.join(path, '*.csv')))
-#         if not csvs:
-#             print(f"  WARNING: no CSV in '{path}'")
-#             return None
-#         if len(csvs) > 1:
-#             print(f"  WARNING: multiple CSVs in '{path}', using: {csvs[0]}")
-#         return csvs[0]
-#     if os.path.exists(path):
-#         return path
-#     print(f"  WARNING: not found: '{path}'")
-#     return None
-
-
-# def load_df(path):
-#     p = resolve_path(path)
-#     if p is None:
-#         return None
-#     try:
-#         df = pd.read_csv(p)
-#         print(f"  Loaded: {p}  ({len(df)} rows)")
-#         return df
-#     except Exception as e:
-#         print(f"  ERROR: {e}")
-#         return None
-
-
-# def fmt(val, decimals=4):
-#     """Format float to fixed decimals, or '—' if None."""
-#     if val is None:
-#         return '—'
-#     return f'{val:.{decimals}f}'
-
-
-# # ── Per-task table builder ────────────────────────────────────────────────────
-
-# def build_task_table(config, trial_indices, task_name):
-#     """
-#     Returns a DataFrame with columns:
-#       Strategy | Trial_X | Trial_Y | Trial_Z | FinalFail | FinalHalt | AvgSteps
-#     One row per method.
-#     """
-#     rows = []
-#     for method, path in config.items():
-#         df = load_df(path)
-#         if df is None:
-#             row = {'Strategy': method}
-#             for i in trial_indices:
-#                 row[f'Trial_{i}'] = '—'
-#             row['FinalFail']  = '—'
-#             row['FinalHalt']  = '—'
-#             row['AvgSteps']   = '—'
-#             rows.append(row)
-#             continue
-
-#         # Clamp indices to available rows
-#         max_idx = len(df) - 1
-#         row = {'Strategy': method}
-
-#         for i in trial_indices:
-#             idx = min(i, max_idx)
-#             val = df['SuccessRate'].iloc[idx]
-#             row[f'Trial_{i}'] = fmt(val)
-
-#         final = df.iloc[max_idx]
-#         row['FinalFail']  = fmt(final['FailRate'])
-#         row['FinalHalt']  = fmt(final['HaltedRate'])
-#         row['AvgSteps']   = fmt(final['AvgSteps'])
-#         rows.append(row)
-
-#     col_names = (['Strategy']
-#                  + [f'Trial_{i}' for i in trial_indices]
-#                  + ['FinalFail', 'FinalHalt', 'AvgSteps'])
-#     result = pd.DataFrame(rows, columns=col_names)
-
-#     # Rename trial columns to human-readable
-#     trial_labels = {f'Trial_{i}': f'Trial {i+1}' for i in trial_indices}
-#     # For HumanEval rename to Iteration
-#     if task_name == 'HumanEval':
-#         trial_labels = {f'Trial_{i}': f'Iter {i+1}' for i in trial_indices}
-#     result = result.rename(columns=trial_labels)
-
-#     out_path = os.path.join(OUTPUT_DIR, f'{task_name.lower()}_table.csv')
-#     result.to_csv(out_path, index=False)
-#     print(f"\n{task_name} table saved to: {out_path}")
-#     print(result.to_string(index=False))
-#     return result
-
-
-# # ── Combined table builder ────────────────────────────────────────────────────
-
-# def build_combined_table():
-#     """
-#     Final success, fail, halt, avg steps for all methods × all tasks.
-#     ExpeL uses eval CSV. All others use final row.
-#     """
-#     all_methods = ['Simple', 'CoT+GT', 'ReAct', 'Reflexion', 'ExpeL', 'RAR (Ours)']
-#     task_configs = [
-#         ('HotPotQA',          HOTPOT),
-#         ('ALFWorld',          ALFWORLD),
-#         ('HumanEval Hard 50', HUMANEVAL),
-#     ]
-
-#     # Build columns: for each task → Success, Fail, Halt, Steps
-#     cols = ['Method']
-#     for task_name, _ in task_configs:
-#         cols += [
-#             f'{task_name} Success',
-#             f'{task_name} Fail',
-#             f'{task_name} Halt',
-#             f'{task_name} AvgSteps',
-#         ]
-
-#     rows = []
-#     for method in all_methods:
-#         row = {'Method': method}
-#         for task_name, config in task_configs:
-#             if method not in config:
-#                 row[f'{task_name} Success']  = '—'
-#                 row[f'{task_name} Fail']     = '—'
-#                 row[f'{task_name} Halt']     = '—'
-#                 row[f'{task_name} AvgSteps'] = '—'
-#                 continue
-#             df = load_df(config[method])
-#             if df is None:
-#                 row[f'{task_name} Success']  = '—'
-#                 row[f'{task_name} Fail']     = '—'
-#                 row[f'{task_name} Halt']     = '—'
-#                 row[f'{task_name} AvgSteps'] = '—'
-#             else:
-#                 final = df.iloc[-1]
-#                 row[f'{task_name} Success']  = fmt(final['SuccessRate'])
-#                 row[f'{task_name} Fail']     = fmt(final['FailRate'])
-#                 row[f'{task_name} Halt']     = fmt(final['HaltedRate'])
-#                 row[f'{task_name} AvgSteps'] = fmt(final['AvgSteps'])
-#         rows.append(row)
-
-#     result = pd.DataFrame(rows, columns=cols)
-#     out_path = os.path.join(OUTPUT_DIR, 'combined_table.csv')
-#     result.to_csv(out_path, index=False)
-#     print(f"\nCombined table saved to: {out_path}")
-#     print(result.to_string(index=False))
-#     return result
-
-
-# # ── Main ─────────────────────────────────────────────────────────────────────
-
-# if __name__ == '__main__':
-#     os.makedirs(OUTPUT_DIR, exist_ok=True)
-
-#     print("=" * 60)
-#     print("HotPotQA table")
-#     print("=" * 60)
-#     build_task_table(HOTPOT, HOTPOT_TRIALS, 'hotpot')
-
-#     print("\n" + "=" * 60)
-#     print("ALFWorld table")
-#     print("=" * 60)
-#     build_task_table(ALFWORLD, ALFWORLD_TRIALS, 'alfworld')
-
-#     print("\n" + "=" * 60)
-#     print("HumanEval table")
-#     print("=" * 60)
-#     build_task_table(HUMANEVAL, HUMANEVAL_ITERS, 'humaneval')
-
-#     print("\n" + "=" * 60)
-#     print("Combined table")
-#     print("=" * 60)
-#     build_combined_table()
-
-#     print("\nDone. All tables saved to ./plots/")
-
-
-
-
 """
-Table Generator
-================
-Produces 4 CSV files:
-  1. hotpot_table.csv     — HotPotQA per-trial success + final metrics
-  2. alfworld_table.csv   — ALFWorld per-trial success + final metrics
-  3. humaneval_table.csv  — HumanEval per-iteration success + final metrics
-  4. combined_table.csv   — Final success rate only, all tasks side by side
+Table Generator — Multi-Run (Mean ± SD)
+========================================
+Set RUNS to your 3 result root directories (same folder structure in each).
+Produces 4 CSV files in ./plots/:
+  combined_table.csv   — final success mean ± SD, all methods × all tasks
+  hotpot_table.csv     — per-trial success mean ± SD, HotPotQA
+  alfworld_table.csv   — per-trial success mean ± SD, ALFWorld
+  humaneval_table.csv  — per-iter  success mean ± SD, HumanEval
 
-ExpeL rule: use Eval CSV for score, not Gather.
-Standard methods: final row = final trial.
+Values reported as percentages: "65.0 ± 2.5"
+LaTeX column: "$65.0 \\pm 2.5$"
 """
 
 import os
 import glob
+import numpy as np
 import pandas as pd
 
-DATA_ROOT = os.path.expanduser('~/Downloads/reflexion-res')
+# ── Set these to your 3 run root directories ─────────────────────────────────
+RUNS = [
+    os.path.expanduser('~/Downloads/reflexion-res/run1'),
+    os.path.expanduser('~/Downloads/reflexion-res/run2'),
+    os.path.expanduser('~/Downloads/reflexion-res/run3'),
+]
 OUTPUT_DIR = './plots'
 
-# ── CONFIG (same as generate_plots.py) ───────────────────────────────────────
-
-HOTPOT = {
-    'ReAct':          f'{DATA_ROOT}/hotpot/react/',
-    'CoT+GT':         f'{DATA_ROOT}/hotpot/cot/',
-    'Reflexion':      f'{DATA_ROOT}/hotpot/reflexion/',
-    'ExpeL':          f'{DATA_ROOT}/hotpot/expel/100_questions_eval_metrics.csv',
-    'RAR (Ours)':     f'{DATA_ROOT}/hotpot/retrieval/',
+# ── Path templates (relative to each run root) ───────────────────────────────
+HOTPOT_TPL = {
+    'ReAct':      'hotpot/react/',
+    'CoT+GT':     'hotpot/cot/',
+    'Reflexion':  'hotpot/reflexion/',
+    'ExpeL':      'hotpot/expel/100_questions_eval_metrics.csv',
+    'RAR (Ours)': 'hotpot/retrieval/',
+}
+ALFWORLD_TPL = {
+    'ReAct':      'alf/react/',
+    'Reflexion':  'alf/reflexion/',
+    'ExpeL':      'alf/expel/134_envs_metrics_eval_metrics.csv',
+    'RAR (Ours)': 'alf/retrieval/',
+}
+HUMANEVAL_TPL = {
+    'Simple':     'prog/simple/',
+    'CoT+GT':     'prog/cot_gt/',
+    'Reflexion':  'prog/reflexion/',
+    'ExpeL':      'prog/expel/50_problems_metrics_eval_metrics.csv',
+    'RAR (Ours)': 'prog/retrieval/',
 }
 
-ALFWORLD = {
-    'ReAct':          f'{DATA_ROOT}/alf/react/',
-    'Reflexion':      f'{DATA_ROOT}/alf/reflexion/',
-    'ExpeL':          f'{DATA_ROOT}/alf/expel/134_envs_eval_metrics.csv',
-    'RAR (Ours)':     f'{DATA_ROOT}/alf/retrieval/',
-}
-
-HUMANEVAL = {
-    'Simple':         f'{DATA_ROOT}/prog/simple/simple_humaneval_hard/',
-    'CoT+GT':         f'{DATA_ROOT}/prog/cot_gt/cot_gt_humaneval_hard/',
-    'Reflexion':      f'{DATA_ROOT}/prog/reflexion/reflexion_humaneval_hard/',
-    'ExpeL':          f'{DATA_ROOT}/prog/expel/50_problems_metrics_eval_metrics.csv',
-    'RAR (Ours)':     f'{DATA_ROOT}/prog/retrieval/retrieval_humaneval_hard',
-}
-
-# Which trial indices to show in the per-task tables (0-indexed rows in CSV)
-# These correspond to trial 0, midpoint, final
-HOTPOT_TRIALS   = [0, 2, 4]   # trials 1, 3, 5
-ALFWORLD_TRIALS = [0, 4, 9]   # trials 1, 5, 10
-HUMANEVAL_ITERS = [0, 4, 9]   # iterations 1, 5, 10
+# Trial/iteration indices to show in per-task tables (0-indexed)
+HOTPOT_TRIALS   = [0, 2, 4]   # → Trial 1, 3, 5
+ALFWORLD_TRIALS = [0, 4, 9]   # → Trial 1, 5, 10
+HUMANEVAL_ITERS = [0, 4, 9]   # → Iter 1, 5, 10
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
-def resolve_path(path):
+def resolve_csv(path):
     if os.path.isdir(path):
         csvs = sorted(glob.glob(os.path.join(path, '*.csv')))
         if not csvs:
-            print(f"  WARNING: no CSV in '{path}'")
             return None
         if len(csvs) > 1:
             print(f"  WARNING: multiple CSVs in '{path}', using: {csvs[0]}")
         return csvs[0]
-    if os.path.exists(path):
-        return path
-    print(f"  WARNING: not found: '{path}'")
-    return None
+    return path if os.path.exists(path) else None
 
 
-def load_df(path):
-    p = resolve_path(path)
+def load_df(root, rel_path):
+    p = resolve_csv(os.path.join(root, rel_path))
     if p is None:
+        print(f"  WARNING: not found: {os.path.join(root, rel_path)}")
         return None
     try:
-        df = pd.read_csv(p)
-        print(f"  Loaded: {p}  ({len(df)} rows)")
-        return df
+        return pd.read_csv(p)
     except Exception as e:
-        print(f"  ERROR: {e}")
+        print(f"  ERROR reading {p}: {e}")
         return None
 
 
-def fmt(val, decimals=4):
-    """Format float to fixed decimals, or '—' if None."""
-    if val is None:
+def get_metric(df, col, idx=-1):
+    if df is None or col not in df.columns:
+        return None
+    idx = min(idx, len(df) - 1) if idx >= 0 else -1
+    return float(df[col].iloc[idx])
+
+
+def mean_sd(values):
+    v = [x for x in values if x is not None]
+    if not v:
+        return None, None
+    arr = np.array(v, dtype=float)
+    sd = float(arr.std(ddof=1)) if len(arr) > 1 else 0.0
+    return float(arr.mean()), sd
+
+
+def fmt_pct(mean, sd):
+    """'65.0 ± 2.5' or '—'"""
+    if mean is None:
         return '—'
-    return f'{val:.{decimals}f}'
+    return f'{mean * 100:.1f} ± {sd * 100:.1f}'
 
 
-# ── Per-task table builder ────────────────────────────────────────────────────
-
-def build_task_table(config, trial_indices, task_name):
-    """
-    Returns a DataFrame with columns:
-      Strategy | Trial_X | Trial_Y | Trial_Z | FinalFail | FinalHalt | AvgSteps
-    One row per method.
-    """
-    rows = []
-    for method, path in config.items():
-        df = load_df(path)
-        if df is None:
-            row = {'Strategy': method}
-            for i in trial_indices:
-                row[f'Trial_{i}'] = '—'
-            row['FinalFail']  = '—'
-            row['FinalHalt']  = '—'
-            row['AvgSteps']   = '—'
-            rows.append(row)
-            continue
-
-        # Clamp indices to available rows
-        max_idx = len(df) - 1
-        row = {'Strategy': method}
-
-        for i in trial_indices:
-            idx = min(i, max_idx)
-            val = df['SuccessRate'].iloc[idx]
-            row[f'Trial_{i}'] = fmt(val)
-
-        final = df.iloc[max_idx]
-        row['FinalFail']  = fmt(final['FailRate'])
-        row['FinalHalt']  = fmt(final['HaltedRate'])
-        row['AvgSteps']   = fmt(final['AvgSteps'])
-        rows.append(row)
-
-    col_names = (['Strategy']
-                 + [f'Trial_{i}' for i in trial_indices]
-                 + ['FinalFail', 'FinalHalt', 'AvgSteps'])
-    result = pd.DataFrame(rows, columns=col_names)
-
-    # Rename trial columns to human-readable
-    trial_labels = {f'Trial_{i}': f'Trial {i+1}' for i in trial_indices}
-    # For HumanEval rename to Iteration
-    if task_name == 'HumanEval':
-        trial_labels = {f'Trial_{i}': f'Iter {i+1}' for i in trial_indices}
-    result = result.rename(columns=trial_labels)
-
-    out_path = os.path.join(OUTPUT_DIR, f'{task_name.lower()}_table.csv')
-    result.to_csv(out_path, index=False)
-    print(f"\n{task_name} table saved to: {out_path}")
-    print(result.to_string(index=False))
-    return result
+def fmt_latex(mean, sd):
+    """'$65.0 \\pm 2.5$' or '—'"""
+    if mean is None:
+        return '—'
+    return f'${mean * 100:.1f} \\pm {sd * 100:.1f}$'
 
 
-# ── Combined table builder ────────────────────────────────────────────────────
+def fmt_raw(mean, sd, decimals=4):
+    if mean is None:
+        return '—'
+    return f'{mean:.{decimals}f} ± {sd:.{decimals}f}'
+
+
+# ── Combined table ────────────────────────────────────────────────────────────
 
 def build_combined_table():
-    """
-    Final success, fail, halt, avg steps for all methods × all tasks.
-    ExpeL uses eval CSV. All others use final row.
-    """
+    """Final success rate mean ± SD for all methods × all tasks."""
     all_methods = ['Simple', 'CoT+GT', 'ReAct', 'Reflexion', 'ExpeL', 'RAR (Ours)']
     task_configs = [
-        ('HotPotQA',          HOTPOT),
-        ('ALFWorld',          ALFWORLD),
-        ('HumanEval Hard 50', HUMANEVAL),
+        ('HotPotQA',           HOTPOT_TPL),
+        ('ALFWorld',           ALFWORLD_TPL),
+        ('HumanEval Hard 50',  HUMANEVAL_TPL),
     ]
 
-    # Build columns: for each task → Success, Fail, Halt, Steps
     cols = ['Method']
-    for task_name, _ in task_configs:
-        cols += [
-            f'{task_name} Success',
-            f'{task_name} Fail',
-            f'{task_name} Halt',
-            f'{task_name} AvgSteps',
-        ]
+    for task, _ in task_configs:
+        cols += [f'{task}', f'{task} LaTeX']
 
     rows = []
     for method in all_methods:
         row = {'Method': method}
-        for task_name, config in task_configs:
-            if method not in config:
-                row[f'{task_name} Success']  = '—'
-                row[f'{task_name} Fail']     = '—'
-                row[f'{task_name} Halt']     = '—'
-                row[f'{task_name} AvgSteps'] = '—'
+        for task, tpl in task_configs:
+            if method not in tpl:
+                row[task]               = '—'
+                row[f'{task} LaTeX']    = '—'
                 continue
-            df = load_df(config[method])
-            if df is None:
-                row[f'{task_name} Success']  = '—'
-                row[f'{task_name} Fail']     = '—'
-                row[f'{task_name} Halt']     = '—'
-                row[f'{task_name} AvgSteps'] = '—'
-            else:
-                final = df.iloc[-1]
-                row[f'{task_name} Success']  = fmt(final['SuccessRate'])
-                row[f'{task_name} Fail']     = fmt(final['FailRate'])
-                row[f'{task_name} Halt']     = fmt(final['HaltedRate'])
-                row[f'{task_name} AvgSteps'] = fmt(final['AvgSteps'])
+            scores = [get_metric(load_df(r, tpl[method]), 'SuccessRate')
+                      for r in RUNS]
+            m, s = mean_sd(scores)
+            row[task]            = fmt_pct(m, s)
+            row[f'{task} LaTeX'] = fmt_latex(m, s)
         rows.append(row)
 
-    result = pd.DataFrame(rows, columns=cols)
-    out_path = os.path.join(OUTPUT_DIR, 'combined_table.csv')
-    result.to_csv(out_path, index=False)
-    print(f"\nCombined table saved to: {out_path}")
-    print(result.to_string(index=False))
-    return result
+    df = pd.DataFrame(rows, columns=cols)
+    out = os.path.join(OUTPUT_DIR, 'combined_table.csv')
+    df.to_csv(out, index=False)
+    print(f"\nCombined table → {out}")
+    print(df.to_string(index=False))
+    return df
 
 
-# ── Per-method full trial table ───────────────────────────────────────────────
+# ── Per-task table ────────────────────────────────────────────────────────────
 
-def build_per_method_trial_tables():
+def build_task_table(tpl, trial_indices, task_name):
+    """Per-trial success mean ± SD plus final fail/halt/steps."""
+    rows = []
+    for method, rel_path in tpl.items():
+        dfs = [load_df(r, rel_path) for r in RUNS]
+        row = {'Strategy': method}
+
+        for idx in trial_indices:
+            scores = [get_metric(df, 'SuccessRate', idx) for df in dfs]
+            m, s = mean_sd(scores)
+            label = ('Iter' if task_name.lower() == 'humaneval' else 'Trial')
+            row[f'{label} {idx + 1}'] = fmt_pct(m, s)
+
+        for metric, label in [('SuccessRate', 'FinalSuccess'),
+                               ('FailRate',    'FinalFail'),
+                               ('HaltedRate',  'FinalHalt'),
+                               ('AvgSteps',    'AvgSteps')]:
+            vals = [get_metric(df, metric) for df in dfs]
+            m, s = mean_sd(vals)
+            row[label] = fmt_pct(m, s) if metric != 'AvgSteps' else fmt_raw(m, s, 2)
+
+        row['LaTeX'] = fmt_latex(*mean_sd(
+            [get_metric(df, 'SuccessRate') for df in dfs]))
+        rows.append(row)
+
+    step_label = 'Iter' if task_name.lower() == 'humaneval' else 'Trial'
+    trial_cols = [f'{step_label} {i + 1}' for i in trial_indices]
+    df = pd.DataFrame(rows, columns=(
+        ['Strategy'] + trial_cols +
+        ['FinalSuccess', 'FinalFail', 'FinalHalt', 'AvgSteps', 'LaTeX']
+    ))
+    out = os.path.join(OUTPUT_DIR, f'{task_name.lower()}_table.csv')
+    df.to_csv(out, index=False)
+    print(f"\n{task_name} table → {out}")
+    print(df.to_string(index=False))
+    return df
+
+
+# ── Per-method full-trial table ───────────────────────────────────────────────
+
+def build_per_trial_tables(tpl, task_name, step_label='Trial'):
     """
-    For each task, produce one CSV per method with all trials:
-      Trial | Success | Fail | Halt | AvgSteps | DeltaSuccess
-    Saved to ./plots/trials/{task}_{method}.csv
+    For each method: one CSV with every trial row, mean ± SD across runs,
+    plus ΔSuccess over the previous trial.
+    Saved to ./plots/trials/{task_name}_{method}.csv
     """
     trials_dir = os.path.join(OUTPUT_DIR, 'trials')
     os.makedirs(trials_dir, exist_ok=True)
 
-    task_configs = [
-        ('hotpot',    HOTPOT),
-        ('alfworld',  ALFWORLD),
-        ('humaneval', HUMANEVAL),
-    ]
+    for method, rel_path in tpl.items():
+        dfs = [load_df(r, rel_path) for r in RUNS]
+        dfs = [df for df in dfs if df is not None]
+        if not dfs:
+            print(f"  WARNING: no data for '{method}', skipping")
+            continue
 
-    for task_name, config in task_configs:
-        print(f"\n{'='*60}")
-        print(f"Per-trial tables for {task_name}")
-        print('='*60)
+        n = min(len(df) for df in dfs)
+        rows = []
+        prev_mean = None
+        for i in range(n):
+            row = {step_label: i + 1}
+            for metric, label, pct in [
+                ('SuccessRate', 'Success', True),
+                ('FailRate',    'Fail',    True),
+                ('HaltedRate',  'Halt',    True),
+                ('AvgSteps',    'AvgSteps',False),
+            ]:
+                vals = [get_metric(df, metric, i) for df in dfs]
+                m, s = mean_sd(vals)
+                row[label] = fmt_pct(m, s) if pct else fmt_raw(m, s, 2)
+                if label == 'Success':
+                    cur_mean = m
 
-        for method, path in config.items():
-            # Skip gather entries — use eval for ExpeL
-            if '(Gather)' in method:
-                continue
-            clean_method = method.replace('(Eval)', '').strip()
+            if prev_mean is None:
+                row['DeltaSuccess'] = '---'
+            else:
+                delta = (cur_mean - prev_mean) * 100
+                row['DeltaSuccess'] = f'${delta:+.1f}$'
+            prev_mean = cur_mean
+            rows.append(row)
 
-            df = load_df(path)
-            if df is None:
-                continue
+        df_out = pd.DataFrame(rows, columns=[
+            step_label, 'Success', 'Fail', 'Halt', 'AvgSteps', 'DeltaSuccess'])
+        safe = method.replace(' ', '_').replace('(', '').replace(')', '')
+        out  = os.path.join(trials_dir, f'{task_name.lower()}_{safe}.csv')
+        df_out.to_csv(out, index=False)
+        print(f"  Saved: {out}")
+        print(df_out.to_string(index=False))
 
-            rows = []
-            prev_success = None
-            for i, row in df.iterrows():
-                trial_num  = int(row.iloc[0])   # first col = trial/iter number
-                success    = float(row['SuccessRate'])
-                fail       = float(row['FailRate'])
-                halt       = float(row['HaltedRate'])
-                steps      = float(row['AvgSteps'])
-                delta      = f'+{success - prev_success:.4f}' \
-                             if prev_success is not None else '---'
-                prev_success = success
-                rows.append({
-                    'Trial':        trial_num,
-                    'Success':      fmt(success),
-                    'Fail':         fmt(fail),
-                    'Halt':         fmt(halt),
-                    'AvgSteps':     fmt(steps),
-                    'DeltaSuccess': delta,
-                })
-
-            result = pd.DataFrame(rows)
-            safe_method = clean_method.replace(' ', '_').replace('(', '').replace(')', '')
-            out_path = os.path.join(trials_dir,
-                                    f'{task_name}_{safe_method}.csv')
-            result.to_csv(out_path, index=False)
-            print(f"  Saved: {out_path}")
-            print(result.to_string(index=False))
 
 # ── Main ─────────────────────────────────────────────────────────────────────
 
 if __name__ == '__main__':
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-    print("=" * 60)
-    print("HotPotQA table")
-    print("=" * 60)
-    build_task_table(HOTPOT, HOTPOT_TRIALS, 'hotpot')
+    print(f"Using {len(RUNS)} run(s): {RUNS}\n")
 
-    print("\n" + "=" * 60)
-    print("ALFWorld table")
     print("=" * 60)
-    build_task_table(ALFWORLD, ALFWORLD_TRIALS, 'alfworld')
-
-    print("\n" + "=" * 60)
-    print("HumanEval table")
+    build_task_table(HOTPOT_TPL,    HOTPOT_TRIALS,   'HotPotQA')
     print("=" * 60)
-    build_task_table(HUMANEVAL, HUMANEVAL_ITERS, 'humaneval')
-
-    print("\n" + "=" * 60)
-    print("Combined table")
+    build_task_table(ALFWORLD_TPL,  ALFWORLD_TRIALS, 'ALFWorld')
+    print("=" * 60)
+    build_task_table(HUMANEVAL_TPL, HUMANEVAL_ITERS, 'HumanEval')
     print("=" * 60)
     build_combined_table()
 
-    print("\n" + "=" * 60)
-    print("Per-method full trial tables")
     print("=" * 60)
-    build_per_method_trial_tables()
+    print("Per-method full-trial tables")
+    print("=" * 60)
+    build_per_trial_tables(HOTPOT_TPL,    'hotpotqa',  step_label='Trial')
+    build_per_trial_tables(ALFWORLD_TPL,  'alfworld',  step_label='Trial')
+    build_per_trial_tables(HUMANEVAL_TPL, 'humaneval', step_label='Iter')
 
-    print("\nDone. All tables saved to ./plots/")
+    print(f"\nDone. All tables saved to {OUTPUT_DIR}/")

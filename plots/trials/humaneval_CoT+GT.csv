@@ -1,2 +1,2 @@
-Trial,Success,Fail,Halt,AvgSteps,DeltaSuccess
-0,0.9400,0.0000,0.0600,1.0000,---
+Iter,Success,Fail,Halt,AvgSteps,DeltaSuccess
+1,92.7 ± 1.2,0.0 ± 0.0,7.3 ± 1.2,1.00 ± 0.00,---
